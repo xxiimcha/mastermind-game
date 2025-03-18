@@ -2,163 +2,116 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define MAX_ROUNDS 10
 #define CODE_LENGTH 4
-#define DEFAULT_MAX_ROUNDS 10
 #define NUM_COLORS 6
 
-void generateSecretCode(int secretCode[]);
-void getPlayerGuess(int playerGuess[]);
-void evaluateGuess(int secretCode[], int playerGuess[], int *correctPos, int *correctColor);
-void printFeedback(int correctPos, int correctColor);
+const char COLORS[NUM_COLORS] = {'R', 'Y', 'G', 'B', 'C', 'P'}; // Red, Yellow, Green, Blue, Cyan, Purple
+
+void generateRandomCode(char *c1, char *c2, char *c3, char *c4);
+void getUserGuess(char *g1, char *g2, char *g3, char *g4);
+void evaluateGuess(char c1, char c2, char c3, char c4, char g1, char g2, char g3, char g4, int *correctPos, int *correctColor);
 void displayMenu();
-void startGame(int maxRounds, int customMode);
-void setOptions(int *maxRounds, int *customMode);
+void playGame(int rounds, int customMode, char customC1, char customC2, char customC3, char customC4);
 
 int main() {
     int choice;
-    int maxRounds = DEFAULT_MAX_ROUNDS;
+    int rounds = 10;
     int customMode = 0;
+    char customC1, customC2, customC3, customC4;
 
-    do {
+    srand(time(0));
+
+    while (1) {
         displayMenu();
+        printf("Enter your choice: ");
         scanf("%d", &choice);
+        getchar(); // Clear newline
 
         switch (choice) {
             case 1:
-                startGame(maxRounds, customMode);
+                playGame(rounds, customMode, customC1, customC2, customC3, customC4);
                 break;
             case 2:
-                setOptions(&maxRounds, &customMode);
+                printf("Select number of rounds (1-10): ");
+                scanf("%d", &rounds);
+                if (rounds < 1 || rounds > 10) rounds = 10;
+                printf("Enable custom code mode? (1-Yes, 0-No): ");
+                scanf("%d", &customMode);
+                if (customMode) {
+                    printf("Enter custom secret code (%d colors R/Y/G/B/C/P): ", CODE_LENGTH);
+                    scanf(" %c %c %c %c", &customC1, &customC2, &customC3, &customC4);
+                }
                 break;
             case 3:
-                printf("Thank you for playing Mastermind! Goodbye.\n");
-                break;
+                printf("Exiting game...\n");
+                return 0;
             default:
-                printf("Invalid choice. Please try again.\n");
+                printf("Invalid choice. Try again.\n");
         }
-    } while (choice != 3);
-
+    }
     return 0;
 }
 
 void displayMenu() {
-    printf("\n=== Mastermind ===\n");
-    printf("1. Start a New Game\n");
+    printf("\n==== MASTERMIND GAME ====\n");
+    printf("1. Start New Game\n");
     printf("2. Options\n");
     printf("3. Quit\n");
-    printf("Enter your choice: ");
 }
 
-void startGame(int maxRounds, int customMode) {
-    int secretCode[CODE_LENGTH];
-    int playerGuess[CODE_LENGTH];
-    int correctPos, correctColor;
-    int round = 0;
+void generateRandomCode(char *c1, char *c2, char *c3, char *c4) {
+    *c1 = COLORS[rand() % NUM_COLORS];
+    *c2 = COLORS[rand() % NUM_COLORS];
+    *c3 = COLORS[rand() % NUM_COLORS];
+    *c4 = COLORS[rand() % NUM_COLORS];
+}
 
+void getUserGuess(char *g1, char *g2, char *g3, char *g4) {
+    printf("Enter your guess (%d colors R/Y/G/B/C/P): ", CODE_LENGTH);
+    scanf(" %c %c %c %c", g1, g2, g3, g4);
+}
+
+void evaluateGuess(char c1, char c2, char c3, char c4, char g1, char g2, char g3, char g4, int *correctPos, int *correctColor) {
+    *correctPos = 0;
+    *correctColor = 0;
+
+    if (g1 == c1) (*correctPos)++;
+    if (g2 == c2) (*correctPos)++;
+    if (g3 == c3) (*correctPos)++;
+    if (g4 == c4) (*correctPos)++;
+
+    if (g1 == c2 || g1 == c3 || g1 == c4) (*correctColor)++;
+    if (g2 == c1 || g2 == c3 || g2 == c4) (*correctColor)++;
+    if (g3 == c1 || g3 == c2 || g3 == c4) (*correctColor)++;
+    if (g4 == c1 || g4 == c2 || g4 == c3) (*correctColor)++;
+}
+
+void playGame(int rounds, int customMode, char customC1, char customC2, char customC3, char customC4) {
+    char secretC1, secretC2, secretC3, secretC4;
     if (customMode) {
-        printf("Enter a custom secret code (4 numbers between 1-6): ");
-        getPlayerGuess(secretCode);
+        secretC1 = customC1;
+        secretC2 = customC2;
+        secretC3 = customC3;
+        secretC4 = customC4;
     } else {
-        srand(time(NULL));
-        generateSecretCode(secretCode);
+        generateRandomCode(&secretC1, &secretC2, &secretC3, &secretC4);
     }
 
-    printf("\nWelcome to Mastermind!\n");
-    printf("Try to guess the secret code.\n");
+    printf("\nSecret Code Generated! Start Guessing.\n");
+    char g1, g2, g3, g4;
+    int correctPos, correctColor;
 
-    while (round < maxRounds) {
-        correctPos = 0;
-        correctColor = 0;
-        printf("\nRound %d: Enter your guess: ", round + 1);
-        getPlayerGuess(playerGuess);
-        evaluateGuess(secretCode, playerGuess, &correctPos, &correctColor);
-        printFeedback(correctPos, correctColor);
+    for (int round = 1; round <= rounds; round++) {
+        getUserGuess(&g1, &g2, &g3, &g4);
+        evaluateGuess(secretC1, secretC2, secretC3, secretC4, g1, g2, g3, g4, &correctPos, &correctColor);
+        printf("Round %d - Correct Position: %d, Correct Color Wrong Position: %d\n", round, correctPos, correctColor);
 
         if (correctPos == CODE_LENGTH) {
-            printf("Congratulations! You guessed the secret code in %d rounds!\n", round + 1);
+            printf("Congratulations! You cracked the code in %d rounds!\n", round);
             return;
         }
-        round++;
     }
 
-    printf("Game Over! The secret code was: ");
-    for (int i = 0; i < CODE_LENGTH; i++) {
-        printf("%d ", secretCode[i]);
-    }
-    printf("\n");
-}
-
-void setOptions(int *maxRounds, int *customMode) {
-    int choice;
-    printf("\n=== Options ===\n");
-    printf("1. Set Game Mode (1 - Random, 2 - Custom)\n");
-    printf("2. Set Number of Rounds (1-10)\n");
-    printf("3. Return to Main Menu\n");
-    printf("Enter your choice: ");
-    scanf("%d", &choice);
-
-    switch (choice) {
-        case 1:
-            printf("Select mode (1 - Random, 2 - Custom): ");
-            scanf("%d", customMode);
-            *customMode = (*customMode == 2) ? 1 : 0;
-            break;
-        case 2:
-            printf("Enter number of rounds (1-10): ");
-            scanf("%d", maxRounds);
-            if (*maxRounds < 1 || *maxRounds > 10) {
-                printf("Invalid input! Setting to default (10).\n");
-                *maxRounds = DEFAULT_MAX_ROUNDS;
-            }
-            break;
-        case 3:
-            return;
-        default:
-            printf("Invalid choice. Returning to main menu.\n");
-    }
-}
-
-void generateSecretCode(int secretCode[]) {
-    for (int i = 0; i < CODE_LENGTH; i++) {
-        secretCode[i] = (rand() % NUM_COLORS) + 1;
-    }
-}
-
-void getPlayerGuess(int playerGuess[]) {
-    for (int i = 0; i < CODE_LENGTH; i++) {
-        scanf("%d", &playerGuess[i]);
-        if (playerGuess[i] < 1 || playerGuess[i] > NUM_COLORS) {
-            printf("Invalid input! Please enter numbers between 1 and 6.\n");
-            i--;
-        }
-    }
-}
-
-void evaluateGuess(int secretCode[], int playerGuess[], int *correctPos, int *correctColor) {
-    int secretChecked[CODE_LENGTH] = {0};
-    int guessChecked[CODE_LENGTH] = {0};
-
-    for (int i = 0; i < CODE_LENGTH; i++) {
-        if (playerGuess[i] == secretCode[i]) {
-            (*correctPos)++;
-            secretChecked[i] = 1;
-            guessChecked[i] = 1;
-        }
-    }
-
-    for (int i = 0; i < CODE_LENGTH; i++) {
-        if (!guessChecked[i]) {
-            for (int j = 0; j < CODE_LENGTH; j++) {
-                if (!secretChecked[j] && playerGuess[i] == secretCode[j]) {
-                    (*correctColor)++;
-                    secretChecked[j] = 1;
-                    break;
-                }
-            }
-        }
-    }
-}
-
-void printFeedback(int correctPos, int correctColor) {
-    printf("Correct Position: %d | Correct Color but Wrong Position: %d\n", correctPos, correctColor);
+    printf("Game Over! The secret code was: %c%c%c%c\n", secretC1, secretC2, secretC3, secretC4);
 }
