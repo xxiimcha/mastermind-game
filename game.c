@@ -7,7 +7,7 @@
  * randomly generated or custom secret code within a limited number of rounds.
  * A player receives feedback on their guess in terms of correct positions and correct colors in incorrect positions.
  *
- * Acknowledgments: 
+ * Acknowledgments: List of references used in making this project
  */
 
  #include <stdio.h>
@@ -27,6 +27,7 @@
  void evaluateGuess(char c1, char c2, char c3, char c4, char g1, char g2, char g3, char g4, int *correctPos, int *correctColor);
  void displayMenu();
  void playGame(int rounds, int customMode, char customC1, char customC2, char customC3, char customC4);
+ int isValidColor(char c);
  
  int main() {
      int choice;
@@ -83,15 +84,32 @@
      *c4 = COLORS[rand() % NUM_COLORS];
  }
  
- /* Gets the user's guess input */
+ /* Checks if a given color is valid */
+ int isValidColor(char c) {
+     for (int i = 0; i < NUM_COLORS; i++) {
+         if (c == COLORS[i]) {
+             return 1;
+         }
+     }
+     return 0;
+ }
+ 
+ /* Gets the user's guess input and validates it */
  void getUserGuess(char *g1, char *g2, char *g3, char *g4) {
-     printf("Enter your guess (%d colors R/Y/G/B/C/P) or 'Q' to quit: ", CODE_LENGTH);
-     char input[10];
-     fgets(input, sizeof(input), stdin);
-     if (input[0] == 'Q' || input[0] == 'q') {
-         *g1 = *g2 = *g3 = *g4 = 'Q'; // Quit signal
-     } else {
-         sscanf(input, " %c %c %c %c", g1, g2, g3, g4);
+     while (1) {
+         printf("Enter your guess (%d colors R/Y/G/B/C/P) or 'Q' to quit: ", CODE_LENGTH);
+         char input[10];
+         fgets(input, sizeof(input), stdin);
+         if (input[0] == 'Q' || input[0] == 'q') {
+             *g1 = *g2 = *g3 = *g4 = 'Q'; // Quit signal
+             return;
+         }
+         if (sscanf(input, " %c %c %c %c", g1, g2, g3, g4) == 4 && 
+             isValidColor(*g1) && isValidColor(*g2) && isValidColor(*g3) && isValidColor(*g4)) {
+             return;
+         } else {
+             printf("Invalid input! Please enter only valid colors (R/Y/G/B/C/P).\n");
+         }
      }
  }
  
@@ -141,9 +159,6 @@
              return;
          }
      }
- 
      printf("Game Over! The secret code was: %c%c%c%c\n", secretC1, secretC2, secretC3, secretC4);
  }
  
- /* Academic Honesty Declaration */
- /* I certify that this project is my own work and that I have not copied any part of it from another source. */
